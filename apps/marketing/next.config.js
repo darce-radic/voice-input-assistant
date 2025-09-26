@@ -25,8 +25,26 @@ const nextConfig = {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://jocular-youtiao-7bff13.netlify.app',
   },
 
+  // Configure headers for proper MIME types
+  async headers() {
+    return [
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript',
+          },
+        ],
+      },
+    ];
+  },
+
+  // Ensure proper static file serving
+  poweredByHeader: false,
+  compress: true,
+
   // Experimental features
-  // The app directory is now stable in Next.js 13+
   experimental: {
     // Add any experimental features here if needed
   },
