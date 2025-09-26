@@ -1,7 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
-  "tasks": {
+  "pipeline": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": [
@@ -22,11 +21,7 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env.local",
-        ".env"
-      ]
+      "inputs": ["$TURBO_DEFAULT$", ".env.local", ".env"]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -44,10 +39,7 @@
         "jest.config.js",
         "jest.config.ts"
       ],
-      "outputs": [
-        "coverage/**",
-        "TestResults/**"
-      ]
+      "outputs": ["coverage/**", "TestResults/**"]
     },
     "test:watch": {
       "cache": false,
@@ -70,7 +62,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         ".eslintrc.js",
-        ".eslintrc.json", 
+        ".eslintrc.json",
         "eslint.config.js",
         "tsconfig.json"
       ],
@@ -78,14 +70,8 @@
     },
     "type-check": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "tsconfig.json",
-        "tsconfig.*.json"
-      ],
-      "outputs": [
-        "tsconfig.tsbuildinfo"
-      ]
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json", "tsconfig.*.json"],
+      "outputs": ["tsconfig.tsbuildinfo"]
     },
     "format": {
       "cache": false,
@@ -102,7 +88,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         ".prettierrc",
-        ".prettierrc.json", 
+        ".prettierrc.json",
         ".prettierrc.js",
         "prettier.config.js"
       ],
@@ -113,11 +99,7 @@
       "outputs": []
     }
   },
-  "globalDependencies": [
-    ".gitignore",
-    "package.json",
-    "turbo.json"
-  ],
+  "globalDependencies": [".gitignore", "package.json", "turbo.json"],
   "globalPassThroughEnv": [
     "NODE_ENV",
     "CI",
