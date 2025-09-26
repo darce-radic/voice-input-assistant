@@ -1,9 +1,8 @@
 # Netlify Configuration for Voice Input Assistant Marketing Site
 
 [build]
-  command = "npm run build"
+  command = "npm install && npm run build"
   publish = "out"
-  ignore = "git diff --quiet HEAD^ HEAD ./"
 
 # Next.js specific settings
 [build.environment]
