@@ -1,0 +1,553 @@
+<Window x:Class="VoiceInputAssistant.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:prism="http://prismlibrary.com/"
+        prism:ViewModelLocator.AutoWireViewModel="True"
+        Title="Settings - Voice Input Assistant"
+        Height="700"
+        Width="900"
+        MinHeight="600"
+        MinWidth="800"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource MaterialDesignPaper}"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Icon="../Assets/icon.ico"
+        ResizeMode="CanResize">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
+        <Style x:Key="CategoryHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Margin" Value="0,16,0,8"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+        </Style>
+        
+        <Style x:Key="SettingCardStyle" TargetType="materialDesign:Card">
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="materialDesign:ShadowAssist.ShadowDepth" Value="Depth1"/>
+            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="EnhancedSliderStyle" TargetType="Slider" BasedOn="{StaticResource MaterialDesignSlider}">
+            <Setter Property="materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging" Value="True"/>
+            <Setter Property="materialDesign:SliderAssist.HideActiveTrack" Value="False"/>
+        </Style>
+        
+        <Style x:Key="CategoryListBoxStyle" TargetType="ListBox" BasedOn="{StaticResource MaterialDesignNavigationPrimaryListBox}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Resources>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignNavigationPrimaryListBoxItem}">
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+        </Style>
+        
+        <Style x:Key="SettingTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        
+        <Style x:Key="SettingDescriptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <materialDesign:ColorZone Grid.Row="0" 
+                                  Mode="PrimaryMid" 
+                                  Padding="20"
+                                  materialDesign:ShadowAssist.ShadowDepth="Depth2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="Settings" 
+                                           Width="24" 
+                                           Height="24" 
+                                           Margin="0,0,12,0"
+                                           Foreground="White"/>
+                    <TextBlock Text="Settings" 
+                             FontSize="20" 
+                             FontWeight="Medium" 
+                             Foreground="White"
+                             VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Style="{StaticResource MaterialDesignToolButton}"
+                        ToolTip="Close Settings"
+                        Click="CloseButton_Click"
+                        Margin="8,0,0,0">
+                    <materialDesign:PackIcon Kind="Close" 
+                                           Width="20" 
+                                           Height="20" 
+                                           Foreground="White"/>
+                </Button>
+            </Grid>
+        </materialDesign:ColorZone>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Navigation Panel -->
+            <materialDesign:ColorZone Grid.Column="0" 
+                                      Mode="Light"
+                                      Padding="0">
+                <ListBox ItemsSource="{Binding SettingsCategories}"
+                         SelectedItem="{Binding SelectedCategory}"
+                         Style="{StaticResource CategoryListBoxStyle}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" 
+                                      Margin="12,8">
+                                <materialDesign:PackIcon Kind="{Binding Icon}" 
+                                                       Width="20" 
+                                                       Height="20" 
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Title}" 
+                                         VerticalAlignment="Center"
+                                         FontSize="14"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </materialDesign:ColorZone>
+
+            <!-- Settings Content -->
+            <ScrollViewer Grid.Column="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="20">
+                <Grid>
+                    <!-- General Settings -->
+                    <StackPanel Visibility="{Binding IsGeneralSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="General" Style="{StaticResource CategoryHeaderStyle}"/>
+                        
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Startup" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Configure how the application behaves when Windows starts"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <CheckBox Content="Start with Windows"
+                                        IsChecked="{Binding Settings.StartWithWindows}"
+                                        Margin="0,4,0,8"/>
+                                
+                                <CheckBox Content="Start minimized to tray"
+                                        IsChecked="{Binding Settings.StartMinimized}"
+                                        Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="System Tray" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Control system tray behavior and notifications"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <CheckBox Content="Minimize to tray instead of closing"
+                                        IsChecked="{Binding Settings.MinimizeToTray}"
+                                        Margin="0,4,0,8"/>
+                                
+                                <CheckBox Content="Show notification balloons"
+                                        IsChecked="{Binding Settings.ShowNotifications}"
+                                        Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Theme" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Customize the application appearance"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <ComboBox materialDesign:HintAssist.Hint="Theme"
+                                        ItemsSource="{Binding AvailableThemes}"
+                                        SelectedItem="{Binding Settings.Theme}"
+                                        MinWidth="200"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+
+                    <!-- Speech Recognition Settings -->
+                    <StackPanel Visibility="{Binding IsSpeechSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Speech Recognition" Style="{StaticResource CategoryHeaderStyle}"/>
+                        
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Recognition Engine" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Select the speech-to-text engine to use for voice recognition"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <ComboBox materialDesign:HintAssist.Hint="Engine"
+                                        ItemsSource="{Binding AvailableEngines}"
+                                        SelectedItem="{Binding Settings.SpeechEngine}"
+                                        MinWidth="200"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Recognition Quality" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Higher quality may be slower but more accurate"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <ComboBox materialDesign:HintAssist.Hint="Quality"
+                                        ItemsSource="{Binding AvailableQualities}"
+                                        SelectedItem="{Binding Settings.RecognitionQuality}"
+                                        MinWidth="200"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Voice Activation" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Configure how voice recognition is triggered"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <ComboBox materialDesign:HintAssist.Hint="Activation Mode"
+                                        ItemsSource="{Binding AvailableActivationModes}"
+                                        SelectedItem="{Binding Settings.VoiceActivationMode}"
+                                        MinWidth="200"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,4,0,8"/>
+                                
+                                <StackPanel Visibility="{Binding ShowVadSettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock Text="Voice Activity Detection Sensitivity"
+                                             FontSize="12"
+                                             Margin="0,8,0,4"/>
+                                    <Slider Value="{Binding Settings.VadSensitivity}"
+                                          Minimum="0"
+                                          Maximum="100"
+                                          TickFrequency="10"
+                                          IsSnapToTickEnabled="True"
+                                          Style="{StaticResource EnhancedSliderStyle}"
+                                          ToolTip="{Binding Settings.VadSensitivity, StringFormat='Sensitivity: {0}%'}"
+                                          Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+
+                    <!-- Audio Settings -->
+                    <StackPanel Visibility="{Binding IsAudioSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Audio" Style="{StaticResource CategoryHeaderStyle}"/>
+                        
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Audio Device" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Select the microphone to use for voice input"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <ComboBox materialDesign:HintAssist.Hint="Input Device"
+                                        ItemsSource="{Binding AvailableInputDevices}"
+                                        SelectedItem="{Binding Settings.InputDevice}"
+                                        DisplayMemberPath="Name"
+                                        MinWidth="300"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,4,0,8"/>
+                                
+                                <Button Content="Test Microphone"
+                                      Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Command="{Binding TestMicrophoneCommand}"
+                                      HorizontalAlignment="Left"
+                                      Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Audio Processing" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Configure audio preprocessing options"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <CheckBox Content="Enable noise suppression"
+                                        IsChecked="{Binding Settings.EnableNoiseSuppression}"
+                                        Margin="0,4,0,8"/>
+                                
+                                <CheckBox Content="Enable echo cancellation"
+                                        IsChecked="{Binding Settings.EnableEchoCancellation}"
+                                        Margin="0,4,0,8"/>
+                                
+                                <TextBlock Text="Recording Volume"
+                                         FontSize="12"
+                                         Margin="0,8,0,4"/>
+                                <Slider Value="{Binding Settings.RecordingVolume}"
+                                      Minimum="0"
+                                      Maximum="100"
+                                      TickFrequency="5"
+                                      IsSnapToTickEnabled="True"
+                                      Style="{StaticResource EnhancedSliderStyle}"
+                                      ToolTip="{Binding Settings.RecordingVolume, StringFormat='Volume: {0}%'}"
+                                      Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+
+                    <!-- Hotkeys Settings -->
+                    <StackPanel Visibility="{Binding IsHotkeysSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Hotkeys" Style="{StaticResource CategoryHeaderStyle}"/>
+                        
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Global Hotkeys" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Configure keyboard shortcuts that work system-wide"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <CheckBox Content="Enable global hotkeys"
+                                        IsChecked="{Binding Settings.EnableGlobalHotkeys}"
+                                        Margin="0,4,0,12"/>
+                                
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <TextBlock Grid.Row="0" Grid.Column="0" 
+                                             Text="Start/Stop Listening:" 
+                                             VerticalAlignment="Center"
+                                             Margin="0,8"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" 
+                                           Text="{Binding Settings.StartStopHotkey}"
+                                           IsReadOnly="True"
+                                           Margin="8"
+                                           MinWidth="150"/>
+                                    <Button Grid.Row="0" Grid.Column="2"
+                                          Content="Change"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Command="{Binding ChangeHotkeyCommand}"
+                                          CommandParameter="StartStop"
+                                          Margin="8"/>
+                                    
+                                    <TextBlock Grid.Row="1" Grid.Column="0" 
+                                             Text="Push to Talk:" 
+                                             VerticalAlignment="Center"
+                                             Margin="0,8"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" 
+                                           Text="{Binding Settings.PushToTalkHotkey}"
+                                           IsReadOnly="True"
+                                           Margin="8"
+                                           MinWidth="150"/>
+                                    <Button Grid.Row="1" Grid.Column="2"
+                                          Content="Change"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Command="{Binding ChangeHotkeyCommand}"
+                                          CommandParameter="PushToTalk"
+                                          Margin="8"/>
+                                    
+                                    <TextBlock Grid.Row="2" Grid.Column="0" 
+                                             Text="Cancel Recognition:" 
+                                             VerticalAlignment="Center"
+                                             Margin="0,8"/>
+                                    <TextBox Grid.Row="2" Grid.Column="1" 
+                                           Text="{Binding Settings.CancelHotkey}"
+                                           IsReadOnly="True"
+                                           Margin="8"
+                                           MinWidth="150"/>
+                                    <Button Grid.Row="2" Grid.Column="2"
+                                          Content="Change"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Command="{Binding ChangeHotkeyCommand}"
+                                          CommandParameter="Cancel"
+                                          Margin="8"/>
+                                    
+                                    <TextBlock Grid.Row="3" Grid.Column="0" 
+                                             Text="Show/Hide Window:" 
+                                             VerticalAlignment="Center"
+                                             Margin="0,8"/>
+                                    <TextBox Grid.Row="3" Grid.Column="1" 
+                                           Text="{Binding Settings.ShowHideHotkey}"
+                                           IsReadOnly="True"
+                                           Margin="8"
+                                           MinWidth="150"/>
+                                    <Button Grid.Row="3" Grid.Column="2"
+                                          Content="Change"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Command="{Binding ChangeHotkeyCommand}"
+                                          CommandParameter="ShowHide"
+                                          Margin="8"/>
+                                </Grid>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+
+                    <!-- Advanced Settings -->
+                    <StackPanel Visibility="{Binding IsAdvancedSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Advanced" Style="{StaticResource CategoryHeaderStyle}"/>
+                        
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Text Processing" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Configure post-processing of recognized text"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <ComboBox materialDesign:HintAssist.Hint="Post-processing Mode"
+                                        ItemsSource="{Binding AvailablePostProcessingModes}"
+                                        SelectedItem="{Binding Settings.PostProcessingMode}"
+                                        MinWidth="200"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,4,0,8"/>
+                                
+                                <CheckBox Content="Auto-capitalize sentences"
+                                        IsChecked="{Binding Settings.AutoCapitalize}"
+                                        Margin="0,4,0,8"/>
+                                
+                                <CheckBox Content="Auto-correct spelling"
+                                        IsChecked="{Binding Settings.AutoCorrect}"
+                                        Margin="0,4,0,8"/>
+                                
+                                <CheckBox Content="Add punctuation automatically"
+                                        IsChecked="{Binding Settings.AutoPunctuation}"
+                                        Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Logging &amp; Diagnostics" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Control application logging and diagnostic information"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <ComboBox materialDesign:HintAssist.Hint="Log Level"
+                                        ItemsSource="{Binding AvailableLogLevels}"
+                                        SelectedItem="{Binding Settings.LogLevel}"
+                                        MinWidth="200"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,4,0,8"/>
+                                
+                                <CheckBox Content="Enable usage analytics"
+                                        IsChecked="{Binding Settings.EnableAnalytics}"
+                                        Margin="0,4,0,8"/>
+                                
+                                <Button Content="Open Log Folder"
+                                      Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Command="{Binding OpenLogFolderCommand}"
+                                      HorizontalAlignment="Left"
+                                      Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Style="{StaticResource SettingCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Data Management" Style="{StaticResource SettingTitleStyle}"/>
+                                <TextBlock Text="Manage application data and reset options"
+                                         Style="{StaticResource SettingDescriptionStyle}"/>
+                                
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="Export Settings"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Command="{Binding ExportSettingsCommand}"
+                                          Margin="0,0,8,0"/>
+                                    
+                                    <Button Content="Import Settings"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Command="{Binding ImportSettingsCommand}"
+                                          Margin="8,0"/>
+                                    
+                                    <Button Content="Reset to Defaults"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Command="{Binding ResetSettingsCommand}"
+                                          Margin="8,0,0,0"
+                                          Foreground="Red"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Footer -->
+        <materialDesign:ColorZone Grid.Row="2" 
+                                  Mode="PrimaryLight"
+                                  Padding="20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" 
+                         Text="{Binding StatusMessage}" 
+                         VerticalAlignment="Center"
+                         FontSize="12"/>
+                
+                <StackPanel Grid.Column="1" 
+                          Orientation="Horizontal">
+                    <Button Content="Apply"
+                          Style="{StaticResource MaterialDesignRaisedButton}"
+                          Command="{Binding ApplySettingsCommand}"
+                          IsEnabled="{Binding HasUnsavedChanges}"
+                          Margin="0,0,12,0"/>
+                    
+                    <Button Content="OK"
+                          Style="{StaticResource MaterialDesignRaisedButton}"
+                          Command="{Binding OkCommand}"
+                          IsDefault="True"
+                          Margin="0,0,8,0"/>
+                    
+                    <Button Content="Cancel"
+                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                          Command="{Binding CancelCommand}"
+                          IsCancel="True"/>
+                </StackPanel>
+            </Grid>
+        </materialDesign:ColorZone>
+    </Grid>
+</Window>

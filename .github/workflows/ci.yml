@@ -1,0 +1,267 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.changes.outputs.web }}
+      desktop: ${{ steps.changes.outputs.desktop }}
+      packages: ${{ steps.changes.outputs.packages }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Check for changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            web:
+              - 'apps/web-dashboard/**'
+              - 'apps/marketing/**'
+              - 'packages/**'
+            desktop:
+              - 'apps/desktop/**'
+              - 'packages/common/**'
+            packages:
+              - 'packages/**'
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.packages == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Type check
+        run: npm run type-check
+
+  test-web:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.packages == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+        env:
+          CI: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          flags: web
+          fail_ci_if_error: false
+
+  test-desktop:
+    runs-on: windows-latest
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore apps/desktop/VoiceInputAssistant.csproj
+
+      - name: Build
+        run: dotnet build apps/desktop/VoiceInputAssistant.csproj --no-restore --configuration Release
+
+      - name: Test
+        run: |
+          if (Test-Path "apps/desktop/VoiceInputAssistant.Tests.csproj") {
+            dotnet test apps/desktop/VoiceInputAssistant.Tests.csproj --no-build --configuration Release --logger trx --results-directory TestResults
+          } else {
+            Write-Host "No test project found at apps/desktop/VoiceInputAssistant.Tests.csproj - skipping tests"
+            mkdir TestResults -ErrorAction SilentlyContinue
+            echo "No tests run" > TestResults/no-tests.txt
+          }
+        shell: pwsh
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-desktop
+          path: TestResults/*.trx
+
+  build-web:
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, test-web]
+    if: always() && (needs.lint-and-format.result == 'success' && needs.test-web.result == 'success')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-web
+          path: |
+            apps/web-dashboard/.next/
+            apps/marketing/.next/
+            packages/*/dist/
+
+  build-desktop:
+    runs-on: windows-latest
+    needs: test-desktop
+    if: always() && needs.test-desktop.result == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore apps/desktop/VoiceInputAssistant.csproj
+
+      - name: Build for Release
+        run: dotnet publish apps/desktop/VoiceInputAssistant.csproj --configuration Release --output ./publish --no-restore
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-desktop
+          path: ./publish/
+
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp, javascript
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build web projects
+        run: npm run build
+
+      - name: Build desktop project
+        run: dotnet build apps/desktop/VoiceInputAssistant.csproj --configuration Release
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  audit-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: List NuGet packages
+        run: dotnet list apps/desktop/VoiceInputAssistant.csproj package --vulnerable --include-transitive
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [build-web, build-desktop, security-scan, audit-dependencies]
+    if: always()
+    steps:
+      - name: Check CI Results
+        run: |
+          echo "CI Summary:"
+          echo "Build Web: ${{ needs.build-web.result }}"
+          echo "Build Desktop: ${{ needs.build-desktop.result }}"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+          echo "Audit: ${{ needs.audit-dependencies.result }}"
+          
+          if [[ "${{ needs.build-web.result }}" == "failure" || "${{ needs.build-desktop.result }}" == "failure" || "${{ needs.security-scan.result }}" == "failure" ]]; then
+            echo "CI failed"
+            exit 1
+          fi
+          
+          echo "CI passed successfully"

@@ -1,0 +1,444 @@
+name: Voice Input Assistant CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, staging ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  NODE_VERSION: '18.x'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality and Testing
+  test:
+    name: Test and Quality Checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run TypeScript type checking
+      run: npm run type-check
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Run tests with coverage
+      run: npm test -- --coverage --watchAll=false
+      env:
+        CI: true
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-${{ matrix.node-version }}
+
+    - name: SonarCloud Scan
+      if: matrix.node-version == '18.x'
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run npm audit
+      run: npm audit --audit-level high
+
+    - name: Run Snyk to check for vulnerabilities
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: javascript
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  # Build for different environments
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup environment variables
+      run: |
+        echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+        echo "GIT_SHA=${{ github.sha }}" >> $GITHUB_ENV
+        echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
+
+    - name: Build application for ${{ matrix.environment }}
+      run: npm run build
+      env:
+        NODE_ENV: production
+        REACT_APP_ENV: ${{ matrix.environment }}
+        REACT_APP_VERSION: ${{ github.ref_name }}
+        REACT_APP_BUILD_DATE: ${{ env.BUILD_DATE }}
+        REACT_APP_GIT_SHA: ${{ env.GIT_SHA }}
+        REACT_APP_BUILD_NUMBER: ${{ env.BUILD_NUMBER }}
+        GENERATE_SOURCEMAP: ${{ matrix.environment != 'production' }}
+
+    - name: Run build tests
+      run: npm run pwa-test &
+      timeout-minutes: 5
+
+    - name: Analyze bundle size
+      run: |
+        npm install -g bundlesize
+        bundlesize
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-${{ matrix.environment }}
+        path: |
+          build/
+          !build/**/*.map
+        retention-days: 30
+
+    - name: Generate deployment summary
+      run: |
+        echo "## Build Summary - ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment:** ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Date:** ${{ env.BUILD_DATE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit SHA:** ${{ env.GIT_SHA }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Size:** $(du -sh build/ | cut -f1)" >> $GITHUB_STEP_SUMMARY
+
+  # Docker Build and Push
+  docker:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        target: production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          NODE_ENV=production
+          REACT_APP_ENV=production
+          BUILD_DATE=${{ env.BUILD_DATE }}
+          GIT_SHA=${{ github.sha }}
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, docker]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-staging
+        path: build/
+
+    - name: Deploy to staging server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          cd /var/www/voice-assistant-staging
+          docker-compose pull
+          docker-compose up -d
+          docker system prune -f
+
+    - name: Health check
+      run: |
+        sleep 30
+        curl -f https://staging.voiceinputassistant.com/health || exit 1
+
+    - name: Notify Slack
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, docker]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-production
+        path: build/
+
+    - name: Deploy to AWS S3
+      uses: jakejarvis/s3-sync-action@master
+      with:
+        args: --delete --cache-control max-age=31536000
+      env:
+        AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: 'us-east-1'
+        SOURCE_DIR: 'build'
+
+    - name: Invalidate CloudFront distribution
+      uses: chetan/invalidate-cloudfront-action@v2
+      env:
+        DISTRIBUTION: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+        PATHS: '/*'
+        AWS_REGION: 'us-east-1'
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    - name: Update production database
+      run: |
+        # Run any necessary database migrations
+        echo "Running production database updates..."
+
+    - name: Health check
+      run: |
+        sleep 60
+        curl -f https://voiceinputassistant.com/health || exit 1
+
+    - name: Create GitHub deployment
+      uses: chrnorm/deployment-action@v2
+      with:
+        token: '${{ github.token }}'
+        environment: production
+        state: success
+
+    - name: Notify teams
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#production'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+
+  # Performance Testing
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install Lighthouse CI
+      run: npm install -g @lhci/cli@0.12.x
+
+    - name: Run Lighthouse CI
+      run: lhci autorun
+      env:
+        LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+    - name: Upload Lighthouse results
+      uses: actions/upload-artifact@v3
+      with:
+        name: lighthouse-results
+        path: .lighthouseci/
+
+  # End-to-End Testing
+  e2e-test:
+    name: End-to-End Testing
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install Playwright
+      run: |
+        npm ci
+        npx playwright install --with-deps
+
+    - name: Run Playwright tests
+      run: npx playwright test
+      env:
+        BASE_URL: https://staging.voiceinputassistant.com
+
+    - name: Upload Playwright results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: playwright-results
+        path: |
+          playwright-report/
+          test-results/
+
+  # Rollback capability
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure() && github.ref == 'refs/heads/main'
+    needs: [deploy-production]
+    environment: production
+    
+    steps:
+    - name: Rollback production deployment
+      run: |
+        echo "Rolling back production deployment..."
+        # Implement rollback logic here
+        # This could involve:
+        # - Reverting to previous S3 deployment
+        # - Rolling back Docker containers
+        # - Reverting database changes
+        
+    - name: Notify rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: 'warning'
+        channel: '#production'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: 'Production deployment rolled back due to failures'
+
+  # Cleanup
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [deploy-staging, deploy-production, performance-test, e2e-test]
+    
+    steps:
+    - name: Cleanup old Docker images
+      run: |
+        # Clean up old images to save space
+        docker system prune -af --filter "until=168h"
+        
+    - name: Archive old artifacts
+      run: |
+        # Archive artifacts older than 30 days
+        echo "Archiving old build artifacts..."

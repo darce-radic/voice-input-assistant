@@ -1,0 +1,11 @@
+version: v1
+name: voice-input-assistant
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/grpc/grpc
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE

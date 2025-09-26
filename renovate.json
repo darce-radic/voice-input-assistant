@@ -1,0 +1,128 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    "schedule:weekends",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separateMajorReleases",
+    ":combinePatchMinorReleases",
+    ":ignoreUnstable",
+    ":prImmediately",
+    ":updateNotScheduled",
+    ":automergeDisabled",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "America/New_York",
+  "schedule": ["before 5am on Monday"],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 2,
+  "stabilityDays": 3,
+  "internalChecksFilter": "strict",
+  "configMigration": true,
+  "platformAutomerge": true,
+  "assigneesFromCodeOwners": true,
+  "reviewersFromCodeOwners": true,
+  "packageRules": [
+    {
+      "groupName": "TypeScript and ESLint",
+      "packagePatterns": [
+        "^@typescript-eslint/",
+        "^eslint",
+        "^typescript$"
+      ],
+      "schedule": ["before 5am on Monday"]
+    },
+    {
+      "groupName": "React ecosystem",
+      "packagePatterns": [
+        "^react",
+        "^@types/react"
+      ],
+      "schedule": ["before 5am on Monday"]
+    },
+    {
+      "groupName": "Next.js ecosystem", 
+      "packagePatterns": [
+        "^next",
+        "^@next/"
+      ],
+      "schedule": ["before 5am on Monday"]
+    },
+    {
+      "groupName": "Testing tools",
+      "packagePatterns": [
+        "^jest",
+        "^@testing-library/",
+        "^playwright",
+        "^vitest"
+      ],
+      "schedule": ["before 5am on Monday"]
+    },
+    {
+      "groupName": "Build tools",
+      "packagePatterns": [
+        "^turbo",
+        "^webpack",
+        "^vite",
+        "^rollup"
+      ],
+      "schedule": ["before 5am on Monday"]
+    },
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "separateMinorPatch": true,
+      "schedule": ["before 5am on Monday"]
+    },
+    {
+      "groupName": ".NET dependencies",
+      "matchManagers": ["nuget"],
+      "schedule": ["before 5am on Monday"],
+      "separateMinorPatch": false
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "requiredStatusChecks": null
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr", 
+      "platformAutomerge": true,
+      "requiredStatusChecks": null
+    },
+    {
+      "matchPackageNames": [
+        "node",
+        "npm"
+      ],
+      "enabled": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": "at any time"
+  },
+  "osvVulnerabilityAlerts": true,
+  "separateMultipleMajor": true,
+  "separateMinorPatch": false,
+  "rebaseWhen": "conflicted",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "recreateClosed": true,
+    "schedule": ["before 5am on the first day of the month"]
+  },
+  "labels": ["dependencies", "renovate"],
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "commitMessageSuffix": "",
+  "prTitle": "chore(deps): update {{depName}} to {{newVersion}}",
+  "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}",
+  "branchPrefix": "renovate/",
+  "onboarding": false,
+  "requireConfig": "required"
+}

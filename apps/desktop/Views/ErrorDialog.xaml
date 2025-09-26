@@ -1,0 +1,244 @@
+<Window x:Class="VoiceInputAssistant.Views.ErrorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Error" 
+        Height="400" Width="600"
+        MinHeight="300" MinWidth="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{DynamicResource MaterialDesignPaper}"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <Style x:Key="ErrorIconStyle" TargetType="materialDesign:PackIcon">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        </Style>
+
+        <Style x:Key="DetailTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}" />
+            <Setter Property="LineHeight" Value="18" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header Section -->
+        <materialDesign:Card Grid.Row="0" 
+                            Padding="16" 
+                            Margin="0,0,0,16"
+                            materialDesign:ElevationAssist.Elevation="Dp2">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon x:Name="ErrorIcon" 
+                                       Style="{StaticResource ErrorIconStyle}"
+                                       Kind="AlertCircle" 
+                                       Foreground="{DynamicResource MaterialDesignValidationErrorBrush}" />
+                
+                <StackPanel>
+                    <TextBlock x:Name="ErrorTitleText" 
+                              Text="An Error Occurred"
+                              FontSize="16" 
+                              FontWeight="Medium"
+                              Foreground="{DynamicResource MaterialDesignBody}" />
+                    
+                    <TextBlock x:Name="ErrorOperationText" 
+                              Text="Operation: Unknown"
+                              FontSize="12"
+                              Margin="0,4,0,0"
+                              Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                </StackPanel>
+            </StackPanel>
+        </materialDesign:Card>
+
+        <!-- Content Section -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <!-- Error Message -->
+                <materialDesign:Card Padding="16" 
+                                   Margin="0,0,0,12"
+                                   materialDesign:ElevationAssist.Elevation="Dp1">
+                    <StackPanel>
+                        <TextBlock Text="Error Message" 
+                                  Style="{StaticResource SectionHeaderStyle}" />
+                        <TextBlock x:Name="ErrorMessageText" 
+                                  Style="{StaticResource DetailTextStyle}"
+                                  Text="An unexpected error occurred." />
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Recovery Suggestions -->
+                <materialDesign:Card x:Name="RecoverySuggestionsCard"
+                                   Padding="16" 
+                                   Margin="0,0,0,12"
+                                   materialDesign:ElevationAssist.Elevation="Dp1"
+                                   Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Suggested Actions" 
+                                  Style="{StaticResource SectionHeaderStyle}" />
+                        <ItemsControl x:Name="RecoverySuggestionsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="0,4">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ChevronRight" 
+                                                                   Width="16" Height="16"
+                                                                   Margin="0,0,8,0"
+                                                                   VerticalAlignment="Top"
+                                                                   Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                            <TextBlock Text="{Binding Description}"
+                                                      Style="{StaticResource DetailTextStyle}"
+                                                      TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Technical Details (Collapsible) -->
+                <Expander x:Name="TechnicalDetailsExpander"
+                         Header="Technical Details"
+                         Margin="0,0,0,12"
+                         materialDesign:ExpanderAssist.HorizontalHeaderPadding="0">
+                    <materialDesign:Card Padding="16" 
+                                       materialDesign:ElevationAssist.Elevation="Dp1"
+                                       Background="{DynamicResource MaterialDesignCardBackground}">
+                        <StackPanel>
+                            <!-- Exception Type -->
+                            <StackPanel x:Name="ExceptionTypePanel" Margin="0,0,0,12">
+                                <TextBlock Text="Exception Type" 
+                                          Style="{StaticResource SectionHeaderStyle}" />
+                                <TextBlock x:Name="ExceptionTypeText" 
+                                          Style="{StaticResource DetailTextStyle}" />
+                            </StackPanel>
+
+                            <!-- Stack Trace -->
+                            <StackPanel x:Name="StackTracePanel">
+                                <TextBlock Text="Stack Trace" 
+                                          Style="{StaticResource SectionHeaderStyle}" />
+                                <TextBox x:Name="StackTraceText"
+                                        IsReadOnly="True"
+                                        TextWrapping="Wrap"
+                                        VerticalScrollBarVisibility="Auto"
+                                        MaxHeight="200"
+                                        FontFamily="Consolas,Monaco,Courier New,monospace"
+                                        FontSize="10"
+                                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                        Padding="8" />
+                            </StackPanel>
+
+                            <!-- Correlation ID -->
+                            <StackPanel Margin="0,12,0,0">
+                                <TextBlock Text="Correlation ID" 
+                                          Style="{StaticResource SectionHeaderStyle}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox x:Name="CorrelationIdText"
+                                            IsReadOnly="True"
+                                            FontFamily="Consolas,Monaco,Courier New,monospace"
+                                            FontSize="11"
+                                            MinWidth="250"
+                                            Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                            Padding="8,4" />
+                                    <Button x:Name="CopyCorrelationIdButton"
+                                           Content="Copy"
+                                           Style="{StaticResource MaterialDesignOutlinedButton}"
+                                           Margin="8,0,0,0"
+                                           Padding="12,4"
+                                           materialDesign:ButtonAssist.CornerRadius="4"
+                                           ToolTip="Copy correlation ID to clipboard"
+                                           Click="CopyCorrelationIdButton_Click" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" 
+                   Orientation="Horizontal" 
+                   HorizontalAlignment="Right" 
+                   Margin="0,16,0,0">
+            
+            <Button x:Name="CopyDetailsButton"
+                   Content="Copy Details"
+                   Style="{StaticResource MaterialDesignOutlinedButton}"
+                   Margin="0,0,12,0"
+                   Padding="16,8"
+                   materialDesign:ButtonAssist.CornerRadius="4"
+                   ToolTip="Copy error details to clipboard"
+                   Click="CopyDetailsButton_Click">
+                <Button.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ContentCopy" 
+                                                   Width="16" Height="16"
+                                                   Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+                </Button.ContentTemplate>
+            </Button>
+
+            <Button x:Name="RestartApplicationButton"
+                   Content="Restart Application"
+                   Style="{StaticResource MaterialDesignRaisedButton}"
+                   Margin="0,0,12,0"
+                   Padding="16,8"
+                   materialDesign:ButtonAssist.CornerRadius="4"
+                   Background="{DynamicResource MaterialDesignValidationErrorBrush}"
+                   BorderBrush="{DynamicResource MaterialDesignValidationErrorBrush}"
+                   Visibility="Collapsed"
+                   Click="RestartApplicationButton_Click">
+                <Button.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Restart" 
+                                                   Width="16" Height="16"
+                                                   Margin="0,0,8,0"
+                                                   Foreground="White" />
+                            <TextBlock Text="{Binding}" 
+                                      VerticalAlignment="Center"
+                                      Foreground="White" />
+                        </StackPanel>
+                    </DataTemplate>
+                </Button.ContentTemplate>
+            </Button>
+
+            <Button x:Name="OkButton"
+                   Content="OK"
+                   Style="{StaticResource MaterialDesignRaisedButton}"
+                   Padding="24,8"
+                   materialDesign:ButtonAssist.CornerRadius="4"
+                   IsDefault="True"
+                   Click="OkButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,23 @@
+version: v1
+plugins:
+  # JavaScript/TypeScript generation
+  - plugin: es
+    out: generated/js
+    opt:
+      - target=ts
+      - import_extension=none
+  - plugin: connect-es
+    out: generated/js
+    opt:
+      - target=ts
+      - import_extension=none
+  
+  # C# generation
+  - plugin: csharp
+    out: generated/csharp
+    opt:
+      - base_namespace=VoiceInputAssistant.Protos
+  - plugin: grpc
+    out: generated/csharp
+    opt:
+      - base_namespace=VoiceInputAssistant.Protos

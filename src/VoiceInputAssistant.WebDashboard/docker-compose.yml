@@ -1,0 +1,269 @@
+version: '3.8'
+
+# Voice Input Assistant - Docker Compose Configuration
+# Supports development, production, and testing environments
+
+services:
+  # Development service
+  voice-assistant-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: voice-assistant-dev
+    ports:
+      - "3000:3000"
+      - "3443:3443"
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - ./package.json:/app/package.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./craco.config.js:/app/craco.config.js:ro
+      - ./.env:/app/.env:ro
+      # Node modules volume for better performance
+      - node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    env_file:
+      - .env
+    networks:
+      - voice-assistant-network
+    profiles:
+      - development
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Production service
+  voice-assistant-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - NODE_ENV=production
+        - REACT_APP_ENV=production
+    container_name: voice-assistant-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # SSL certificates (if using custom certificates)
+      - ./docker/ssl:/etc/nginx/ssl:ro
+      # Nginx logs
+      - nginx_logs:/var/log/nginx
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_ENV=production
+    env_file:
+      - .env.production
+    networks:
+      - voice-assistant-network
+    profiles:
+      - production
+    restart: always
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Testing service
+  voice-assistant-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: testing
+    container_name: voice-assistant-test
+    volumes:
+      - ./coverage:/app/coverage
+      - ./test-results:/app/test-results
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    env_file:
+      - .env.test
+    networks:
+      - voice-assistant-network
+    profiles:
+      - testing
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: voice-assistant-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./docker/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - voice-assistant-network
+    profiles:
+      - production
+      - staging
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx reverse proxy (for production)
+  nginx-proxy:
+    image: nginx:1.25-alpine
+    container_name: voice-assistant-proxy
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./docker/nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+      - nginx_proxy_logs:/var/log/nginx
+    depends_on:
+      - voice-assistant-prod
+    networks:
+      - voice-assistant-network
+    profiles:
+      - production
+      - staging
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Database (PostgreSQL) for production data
+  postgres:
+    image: postgres:15-alpine
+    container_name: voice-assistant-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    environment:
+      - POSTGRES_DB=voiceassistant
+      - POSTGRES_USER=voiceuser
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-defaultpassword}
+    networks:
+      - voice-assistant-network
+    profiles:
+      - production
+      - staging
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voiceuser -d voiceassistant"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MinIO for object storage (alternative to AWS S3)
+  minio:
+    image: minio/minio:latest
+    container_name: voice-assistant-storage
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin123}
+    command: server /data --console-address ":9001"
+    networks:
+      - voice-assistant-network
+    profiles:
+      - production
+      - staging
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch for logging and analytics
+  elasticsearch:
+    image: elasticsearch:8.9.0
+    container_name: voice-assistant-search
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - voice-assistant-network
+    profiles:
+      - production
+      - analytics
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kibana for log visualization
+  kibana:
+    image: kibana:8.9.0
+    container_name: voice-assistant-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - voice-assistant-network
+    profiles:
+      - production
+      - analytics
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# Networks
+networks:
+  voice-assistant-network:
+    driver: bridge
+    name: voice-assistant-network
+
+# Volumes
+volumes:
+  node_modules:
+    name: voice-assistant-node-modules
+  nginx_logs:
+    name: voice-assistant-nginx-logs
+  nginx_proxy_logs:
+    name: voice-assistant-nginx-proxy-logs
+  redis_data:
+    name: voice-assistant-redis-data
+  postgres_data:
+    name: voice-assistant-postgres-data
+  minio_data:
+    name: voice-assistant-minio-data
+  elasticsearch_data:
+    name: voice-assistant-elasticsearch-data

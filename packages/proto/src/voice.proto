@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package voice_input_assistant;
+
+option csharp_namespace = "VoiceInputAssistant.Protos";
+
+// Speech Recognition Service
+service SpeechRecognition {
+  // Recognize audio in one request
+  rpc Recognize(RecognizeRequest) returns (RecognizeResponse);
+  
+  // Stream audio for real-time recognition
+  rpc StreamingRecognize(stream StreamingRecognizeRequest) returns (stream StreamingRecognizeResponse);
+  
+  // Get speech engine status
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+}
+
+message RecognizeRequest {
+  bytes audio_data = 1;
+  string language = 2;
+  string engine = 3;
+  string application_name = 4;
+  VoiceConfig config = 5;
+}
+
+message RecognizeResponse {
+  string text = 1;
+  float confidence = 2;
+  string language = 3;
+  string engine = 4;
+  bool success = 5;
+  string error_message = 6;
+}
+
+message StreamingRecognizeRequest {
+  oneof streaming_request {
+    StreamingConfig config = 1;
+    bytes audio_data = 2;
+  }
+}
+
+message StreamingRecognizeResponse {
+  repeated StreamingRecognitionResult results = 1;
+}
+
+message StreamingRecognitionResult {
+  string text = 1;
+  bool is_final = 2;
+  float confidence = 3;
+  string language = 4;
+  repeated WordTiming word_timings = 5;
+}
+
+message WordTiming {
+  string word = 1;
+  float start_time = 2;
+  float end_time = 3;
+  float confidence = 4;
+}
+
+message StreamingConfig {
+  string language = 1;
+  string engine = 2;
+  string application_name = 3;
+  VoiceConfig config = 4;
+}
+
+message VoiceConfig {
+  float minimum_confidence = 1;
+  bool require_high_confidence = 2;
+  bool enable_profanity_filter = 3;
+  bool enable_auto_punctuation = 4;
+  bool enable_speaker_diarization = 5;
+  bool enable_word_timings = 6;
+  optional VoiceTriggerConfig voice_trigger = 7;
+}
+
+message VoiceTriggerConfig {
+  string wake_word = 1;
+  float wake_word_sensitivity = 2;
+  int32 timeout_seconds = 3;
+  bool require_confirmation = 4;
+}
+
+message GetStatusRequest {
+  string engine = 1;
+}
+
+message GetStatusResponse {
+  bool is_available = 1;
+  string engine = 2;
+  string engine_version = 3;
+  bool requires_network = 4;
+  repeated string supported_languages = 5;
+  bool supports_interim_results = 6;
+  bool supports_speaker_diarization = 7;
+}
+
+// Analytics Service
+service Analytics {
+  // Record transcription event
+  rpc RecordTranscription(TranscriptionEvent) returns (Empty);
+  
+  // Record error event
+  rpc RecordError(ErrorEvent) returns (Empty);
+  
+  // Record engine metrics
+  rpc RecordEngineMetrics(EngineMetrics) returns (Empty);
+  
+  // Get usage statistics
+  rpc GetUsageStats(StatsRequest) returns (UsageStatistics);
+  
+  // Get engine metrics
+  rpc GetEngineMetrics(StatsRequest) returns (stream EngineMetrics);
+  
+  // Get error statistics
+  rpc GetErrorStats(StatsRequest) returns (ErrorStatistics);
+  
+  // Export data
+  rpc ExportData(ExportRequest) returns (stream ExportResponse);
+}
+
+message TranscriptionEvent {
+  string id = 1;
+  int64 timestamp = 2;
+  string application_name = 3;
+  string engine = 4;
+  string language = 5;
+  float confidence = 6;
+  int64 duration = 7;
+  int32 word_count = 8;
+  bool was_successful = 9;
+  string error_type = 10;
+}
+
+message ErrorEvent {
+  string id = 1;
+  int64 timestamp = 2;
+  string application_name = 3;
+  string engine = 4;
+  string error_type = 5;
+  string error_message = 6;
+  string stack_trace = 7;
+}
+
+message EngineMetrics {
+  int64 timestamp = 1;
+  string engine = 2;
+  float average_confidence = 3;
+  float accuracy_rate = 4;
+  float error_rate = 5;
+  int32 total_requests = 6;
+  int32 successful_requests = 7;
+  int32 failed_requests = 8;
+  int64 average_latency = 9;
+  int64 total_processing_time_ms = 10;
+  int64 peak_memory_usage_bytes = 11;
+}
+
+message StatsRequest {
+  int64 start_time = 1;
+  int64 end_time = 2;
+  string engine = 3;
+  string application_name = 4;
+}
+
+message UsageStatistics {
+  int64 start_time = 1;
+  int64 end_time = 2;
+  int32 total_transcriptions = 3;
+  int32 successful_transcriptions = 4;
+  int32 failed_transcriptions = 5;
+  float average_confidence = 6;
+  int64 total_duration = 7;
+  int32 total_word_count = 8;
+  map<string, int32> transcriptions_by_engine = 9;
+  map<string, int32> transcriptions_by_language = 10;
+  map<string, int32> transcriptions_by_application = 11;
+}
+
+message ErrorStatistics {
+  int64 start_time = 1;
+  int64 end_time = 2;
+  int32 total_errors = 3;
+  map<string, int32> errors_by_type = 4;
+  map<string, int32> errors_by_engine = 5;
+  map<string, int32> errors_by_application = 6;
+  repeated ErrorEvent most_frequent_errors = 7;
+}
+
+message ExportRequest {
+  int64 start_time = 1;
+  int64 end_time = 2;
+  string format = 3;
+  string application_name = 4;
+}
+
+message ExportResponse {
+  bytes data = 1;
+}
+
+message Empty {}

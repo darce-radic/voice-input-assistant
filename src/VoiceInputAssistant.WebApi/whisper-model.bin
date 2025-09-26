@@ -1,0 +1,22 @@
+# Placeholder Whisper Model File
+# 
+# In a production environment, this would be replaced with an actual Whisper model file
+# from OpenAI Whisper. The model files are typically downloaded from:
+# https://github.com/openai/whisper/
+#
+# Common models:
+# - tiny.en (39 MB)
+# - base.en (74 MB) 
+# - small.en (244 MB)
+# - medium.en (769 MB)
+# - large-v2 (1550 MB)
+#
+# To use an actual model:
+# 1. Download the desired model from the Whisper repository
+# 2. Replace this placeholder file with the actual .bin file
+# 3. Update the ModelPath in appsettings.json if needed
+#
+# For development/testing purposes, the application should handle
+# missing models gracefully and potentially fall back to a mock service.
+
+PLACEHOLDER_MODEL_FILE=true

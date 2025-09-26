@@ -1,0 +1,314 @@
+syntax = "proto3";
+
+option csharp_namespace = "VoiceInputAssistant.Grpc";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+package voiceassistant;
+
+// Voice Assistant gRPC Service
+service VoiceAssistant {
+  // System Operations
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+  
+  // Speech Recognition Operations
+  rpc StartRecognition(StartRecognitionRequest) returns (StartRecognitionResponse);
+  rpc StopRecognition(StopRecognitionRequest) returns (StopRecognitionResponse);
+  rpc StreamRecognition(StreamRecognitionRequest) returns (stream StreamRecognitionResponse);
+  
+  // Text Processing Operations
+  rpc ProcessText(ProcessTextRequest) returns (ProcessTextResponse);
+  rpc InjectText(InjectTextRequest) returns (InjectTextResponse);
+  
+  // Analytics and History
+  rpc GetAnalytics(GetAnalyticsRequest) returns (GetAnalyticsResponse);
+  rpc GetHistory(GetHistoryRequest) returns (GetHistoryResponse);
+  
+  // Profile Management
+  rpc GetProfiles(GetProfilesRequest) returns (GetProfilesResponse);
+  rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc DeleteProfile(DeleteProfileRequest) returns (DeleteProfileResponse);
+  
+  // Settings Management
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
+}
+
+// System Status Messages
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  bool is_healthy = 1;
+  bool is_listening = 2;
+  bool is_initialized = 3;
+  string active_engine = 4;
+  string active_profile = 5;
+  string version = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// Speech Recognition Messages
+message StartRecognitionRequest {
+  string engine = 1;
+  string quality = 2;
+  string language = 3;
+  int32 timeout_seconds = 4;
+}
+
+message StartRecognitionResponse {
+  string session_id = 1;
+  string status = 2;
+  google.protobuf.Timestamp started_at = 3;
+  string engine = 4;
+  string quality = 5;
+}
+
+message StopRecognitionRequest {}
+
+message StopRecognitionResponse {
+  string status = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
+
+message StreamRecognitionRequest {
+  string engine = 1;
+  string quality = 2;
+  string language = 3;
+  bool interim_results = 4;
+}
+
+message StreamRecognitionResponse {
+  string session_id = 1;
+  string status = 2;
+  string interim_text = 3;
+  string final_text = 4;
+  float confidence = 5;
+  bool is_final = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// Text Processing Messages
+message ProcessTextRequest {
+  string text = 1;
+  string context = 2;
+  string application_context = 3;
+  bool correct_grammar = 4;
+  string target_tone = 5;
+  string format_type = 6;
+  bool expand_abbreviations = 7;
+  bool add_punctuation = 8;
+  string capitalization_style = 9;
+  string translate_to_language = 10;
+  bool summarize = 11;
+  int32 summary_max_length = 12;
+}
+
+message ProcessTextResponse {
+  string original_text = 1;
+  string processed_text = 2;
+  repeated TextChange changes = 3;
+  float confidence = 4;
+  double processing_time_ms = 5;
+  bool success = 6;
+  string error_message = 7;
+}
+
+message TextChange {
+  string type = 1;
+  string reason = 2;
+  string original_text = 3;
+  string new_text = 4;
+}
+
+message InjectTextRequest {
+  string text = 1;
+  string target_application = 2;
+  bool process_text = 3;
+}
+
+message InjectTextResponse {
+  string message = 1;
+  string text = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// Analytics Messages
+message GetAnalyticsRequest {
+  google.protobuf.Timestamp start_date = 1;
+  google.protobuf.Timestamp end_date = 2;
+  string granularity = 3;
+}
+
+message GetAnalyticsResponse {
+  DatePeriod period = 1;
+  int32 total_recognitions = 2;
+  int32 total_words = 3;
+  double average_accuracy = 4;
+  double average_processing_time = 5;
+  repeated ApplicationUsage top_applications = 6;
+  repeated EngineStats engine_statistics = 7;
+}
+
+message DatePeriod {
+  google.protobuf.Timestamp start_date = 1;
+  google.protobuf.Timestamp end_date = 2;
+}
+
+message ApplicationUsage {
+  string application_name = 1;
+  int32 recognition_count = 2;
+  double total_usage_time = 3;
+  double average_accuracy = 4;
+}
+
+message EngineStats {
+  string engine_name = 1;
+  int32 total_recognitions = 2;
+  double average_accuracy = 3;
+  double average_processing_time = 4;
+}
+
+// History Messages
+message GetHistoryRequest {
+  int32 limit = 1;
+  google.protobuf.Timestamp since = 2;
+}
+
+message GetHistoryResponse {
+  repeated RecognitionHistory history = 1;
+}
+
+message RecognitionHistory {
+  string id = 1;
+  string text = 2;
+  double confidence = 3;
+  string engine = 4;
+  string language = 5;
+  double duration = 6;
+  google.protobuf.Timestamp completed_time = 7;
+  string application_name = 8;
+}
+
+// Profile Management Messages
+message GetProfilesRequest {}
+
+message GetProfilesResponse {
+  repeated ApplicationProfile profiles = 1;
+}
+
+message ApplicationProfile {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated string application_executables = 4;
+  bool is_enabled = 5;
+  bool is_default = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  SpeechSettings speech_settings = 9;
+}
+
+message SpeechSettings {
+  string engine = 1;
+  string quality = 2;
+  string language = 3;
+  double confidence_threshold = 4;
+  bool enable_profanity_filter = 5;
+}
+
+message CreateProfileRequest {
+  string name = 1;
+  string description = 2;
+  repeated string application_executables = 3;
+  bool is_enabled = 4;
+  string engine = 5;
+  string quality = 6;
+  string language = 7;
+}
+
+message CreateProfileResponse {
+  ApplicationProfile profile = 1;
+}
+
+message UpdateProfileRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated string application_executables = 4;
+  google.protobuf.BoolValue is_enabled = 5;
+  SpeechSettings speech_settings = 6;
+}
+
+message UpdateProfileResponse {
+  ApplicationProfile profile = 1;
+}
+
+message DeleteProfileRequest {
+  string id = 1;
+}
+
+message DeleteProfileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Settings Messages
+message GetSettingsRequest {}
+
+message GetSettingsResponse {
+  GlobalSettings settings = 1;
+}
+
+message UpdateSettingsRequest {
+  string speech_engine = 1;
+  string recognition_quality = 2;
+  string voice_activation_mode = 3;
+  google.protobuf.BoolValue enable_global_hotkeys = 4;
+  google.protobuf.BoolValue enable_analytics = 5;
+  string theme = 6;
+  string language = 7;
+  google.protobuf.DoubleValue confidence_threshold = 8;
+  google.protobuf.BoolValue startup_with_windows = 9;
+  google.protobuf.BoolValue minimize_to_tray = 10;
+}
+
+message UpdateSettingsResponse {
+  string message = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
+
+message GlobalSettings {
+  string speech_engine = 1;
+  string recognition_quality = 2;
+  string voice_activation_mode = 3;
+  bool enable_global_hotkeys = 4;
+  bool enable_analytics = 5;
+  string theme = 6;
+  string language = 7;
+  double confidence_threshold = 8;
+  bool startup_with_windows = 9;
+  bool minimize_to_tray = 10;
+  HotkeySettings hotkey_settings = 11;
+  AiSettings ai_settings = 12;
+}
+
+message HotkeySettings {
+  string start_recognition = 1;
+  string stop_recognition = 2;
+  string toggle_recognition = 3;
+  string show_hide_window = 4;
+}
+
+message AiSettings {
+  bool enable_post_processing = 1;
+  string default_tone = 2;
+  string default_format = 3;
+  bool auto_correct_grammar = 4;
+  bool auto_add_punctuation = 5;
+  string api_endpoint = 6;
+  string model_name = 7;
+  double temperature = 8;
+  int32 max_tokens = 9;
+}

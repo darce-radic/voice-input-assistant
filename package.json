@@ -1,0 +1,68 @@
+{
+  "name": "voice-input-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A comprehensive speech-to-text solution with Windows desktop app, web dashboard, and marketing site",
+  "keywords": [
+    "speech-to-text",
+    "voice-recognition",
+    "dictation",
+    "accessibility",
+    "windows",
+    "wpf",
+    "nextjs"
+  ],
+  "author": "Voice Input Assistant Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/voice-input-assistant.git"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "type-check": "turbo run type-check",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky install",
+    "setup": "npm install && npm run build",
+    "desktop:dev": "cd apps/desktop && dotnet run",
+    "web:dev": "cd apps/web-dashboard && npm run dev",
+    "marketing:dev": "cd apps/marketing && npm run dev"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
+    "eslint": "^8.48.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1",
+    "prettier": "^3.0.3",
+    "turbo": "^1.10.12",
+    "typescript": "^5.2.2"
+  },
+  "packageManager": "npm@9.8.1",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ]
+  }
+}

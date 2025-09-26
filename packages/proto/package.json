@@ -1,0 +1,24 @@
+{
+  "name": "@voice-input-assistant/proto",
+  "version": "0.1.0",
+  "description": "Protocol buffer definitions for Voice Input Assistant",
+  "private": true,
+  "main": "generated/js/index.js",
+  "types": "generated/js/index.d.ts",
+  "scripts": {
+    "clean": "rimraf generated",
+    "build:proto": "buf generate",
+    "build:js": "tsc -p tsconfig.json",
+    "build": "npm run clean && npm run build:proto && npm run build:js",
+    "lint": "buf lint",
+    "format": "buf format -w"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.28.1",
+    "@bufbuild/protobuf": "^1.6.0",
+    "@bufbuild/protoc-gen-es": "^1.6.0",
+    "@bufbuild/protoc-gen-connect-es": "^0.13.0",
+    "rimraf": "^5.0.1",
+    "typescript": "^5.2.2"
+  }
+}

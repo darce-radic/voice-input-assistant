@@ -1,0 +1,283 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Command Item Template -->
+    <DataTemplate x:Key="CommandItemTemplate">
+        <Border Style="{StaticResource CardStyle}" Margin="4,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Command Icon -->
+                <Ellipse Grid.Column="0" 
+                        Width="8" 
+                        Height="8" 
+                        Fill="{DynamicResource AccentBrush}" 
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center" />
+
+                <!-- Command Details -->
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Command}" 
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource DefaultFontSize}"
+                              FontWeight="Medium"
+                              Foreground="{DynamicResource OnSurfaceBrush}" />
+                    
+                    <TextBlock Text="{Binding Description}" 
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource SmallFontSize}"
+                              Foreground="#757575"
+                              Margin="0,2,0,0" />
+                </StackPanel>
+
+                <!-- Timestamp -->
+                <TextBlock Grid.Column="2" 
+                          Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}" 
+                          FontFamily="{DynamicResource PrimaryFontFamily}"
+                          FontSize="{DynamicResource SmallFontSize}"
+                          Foreground="#BDBDBD"
+                          VerticalAlignment="Top" />
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- History Item Template -->
+    <DataTemplate x:Key="HistoryItemTemplate">
+        <Border Style="{StaticResource CardStyle}" Margin="4,2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Header with timestamp -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                              Text="Voice Command"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource DefaultFontSize}"
+                              FontWeight="Medium"
+                              Foreground="{DynamicResource OnSurfaceBrush}" />
+
+                    <TextBlock Grid.Column="1"
+                              Text="{Binding Timestamp, StringFormat='{}{0:MM/dd HH:mm}'}"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource SmallFontSize}"
+                              Foreground="#BDBDBD" />
+                </Grid>
+
+                <!-- Recognized Text -->
+                <TextBlock Grid.Row="1"
+                          Text="{Binding RecognizedText}"
+                          FontFamily="{DynamicResource PrimaryFontFamily}"
+                          FontSize="{DynamicResource DefaultFontSize}"
+                          Foreground="{DynamicResource OnSurfaceBrush}"
+                          TextWrapping="Wrap"
+                          Margin="0,8,0,4" />
+
+                <!-- Status and Actions -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Status Indicator -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Ellipse>
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse" BasedOn="{StaticResource StatusIndicatorStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status}" Value="Success">
+                                            <Setter Property="Fill" Value="#4CAF50" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                            <Setter Property="Fill" Value="#F44336" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="Processing">
+                                            <Setter Property="Fill" Value="#FF9800" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        
+                        <TextBlock Text="{Binding Status}"
+                                  FontFamily="{DynamicResource PrimaryFontFamily}"
+                                  FontSize="{DynamicResource SmallFontSize}"
+                                  Foreground="#757575"
+                                  VerticalAlignment="Center"
+                                  Margin="4,0,0,0" />
+                    </StackPanel>
+
+                    <!-- Confidence Score -->
+                    <TextBlock Grid.Column="2"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource SmallFontSize}"
+                              Foreground="#757575"
+                              VerticalAlignment="Center">
+                        <Run Text="Confidence: " />
+                        <Run Text="{Binding Confidence, StringFormat='{}{0:P0}'}" />
+                    </TextBlock>
+                </Grid>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- Settings Item Template -->
+    <DataTemplate x:Key="SettingsItemTemplate">
+        <Border Style="{StaticResource CardStyle}" Margin="4,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Setting Details -->
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding Name}"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource DefaultFontSize}"
+                              FontWeight="Medium"
+                              Foreground="{DynamicResource OnSurfaceBrush}" />
+                    
+                    <TextBlock Text="{Binding Description}"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource SmallFontSize}"
+                              Foreground="#757575"
+                              TextWrapping="Wrap"
+                              Margin="0,2,0,0" />
+                </StackPanel>
+
+                <!-- Setting Control -->
+                <ContentControl Grid.Column="1"
+                               Content="{Binding Control}"
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0" />
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- Error Message Template -->
+    <DataTemplate x:Key="ErrorMessageTemplate">
+        <Border Background="#FFEBEE" 
+                BorderBrush="#F44336" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="12,8" 
+                Margin="4,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Error Icon -->
+                <TextBlock Grid.Column="0"
+                          Text="⚠"
+                          FontSize="16"
+                          Foreground="#F44336"
+                          VerticalAlignment="Top"
+                          Margin="0,0,8,0" />
+
+                <!-- Error Details -->
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Title}"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource DefaultFontSize}"
+                              FontWeight="Medium"
+                              Foreground="#D32F2F" />
+                    
+                    <TextBlock Text="{Binding Message}"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource SmallFontSize}"
+                              Foreground="#C62828"
+                              TextWrapping="Wrap"
+                              Margin="0,2,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- Loading Template -->
+    <DataTemplate x:Key="LoadingTemplate">
+        <Border Style="{StaticResource CardStyle}" Margin="4,2">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <ProgressBar Style="{StaticResource ModernProgressBarStyle}"
+                            Width="100"
+                            Height="4"
+                            IsIndeterminate="True"
+                            VerticalAlignment="Center" />
+                
+                <TextBlock Text="Loading..."
+                          FontFamily="{DynamicResource PrimaryFontFamily}"
+                          FontSize="{DynamicResource DefaultFontSize}"
+                          Foreground="#757575"
+                          Margin="12,0,0,0"
+                          VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+    <!-- Speech Engine Template -->
+    <DataTemplate x:Key="SpeechEngineTemplate">
+        <Border Style="{StaticResource CardStyle}" Margin="4,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Engine Status -->
+                <Ellipse Grid.Column="0">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse" BasedOn="{StaticResource StatusIndicatorStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                    <Setter Property="Fill" Value="#4CAF50" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                    <Setter Property="Fill" Value="#BDBDBD" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+
+                <!-- Engine Details -->
+                <StackPanel Grid.Column="1" Margin="8,0">
+                    <TextBlock Text="{Binding Name}"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource DefaultFontSize}"
+                              FontWeight="Medium"
+                              Foreground="{DynamicResource OnSurfaceBrush}" />
+                    
+                    <TextBlock Text="{Binding Description}"
+                              FontFamily="{DynamicResource PrimaryFontFamily}"
+                              FontSize="{DynamicResource SmallFontSize}"
+                              Foreground="#757575"
+                              Margin="0,2,0,0" />
+                </StackPanel>
+
+                <!-- Selection Radio Button -->
+                <RadioButton Grid.Column="2"
+                            IsChecked="{Binding IsSelected}"
+                            GroupName="SpeechEngine"
+                            VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+</ResourceDictionary>

@@ -1,0 +1,271 @@
+{
+  "name": "voice-input-assistant",
+  "version": "1.0.0",
+  "description": "AI-powered voice input and transcription assistant",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "private": true,
+  "author": {
+    "name": "Voice Input Assistant Team",
+    "email": "support@voiceinputassistant.com",
+    "url": "https://voiceinputassistant.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voice-input-assistant/voice-input-assistant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/voice-input-assistant/voice-input-assistant/issues"
+  },
+  "keywords": [
+    "voice",
+    "transcription",
+    "AI",
+    "speech-to-text",
+    "electron",
+    "desktop",
+    "productivity"
+  ],
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx,.js,.jsx --fix",
+    "https": "HTTPS=true SSL_CRT_FILE=cert.pem SSL_KEY_FILE=key.pem npm start",
+    "serve": "serve -s build -l 3000",
+    "pwa-test": "npm run build && npm run serve",
+    
+    "_comment_electron": "=== Electron Scripts ===",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-build": "npm run build && electron .",
+    "dist": "npm run build && node build-windows-installer.js",
+    "dist-clean": "node build-windows-installer.js clean",
+    "dist-prepare": "node build-windows-installer.js prepare",
+    "pack": "electron-builder --dir",
+    "pack-win": "electron-builder --win --dir",
+    "pack-mac": "electron-builder --mac --dir",
+    "pack-linux": "electron-builder --linux --dir",
+    
+    "_comment_railway": "=== Railway Scripts ===",
+    "railway-deploy": "chmod +x deploy-railway.sh && ./deploy-railway.sh",
+    "railway-deploy-staging": "chmod +x deploy-railway.sh && ./deploy-railway.sh staging",
+    "railway-deploy-prod": "chmod +x deploy-railway.sh && ./deploy-railway.sh production",
+    "railway-logs": "railway logs",
+    "railway-status": "railway status",
+    "railway-open": "railway open",
+    
+    "_comment_deployment": "=== Deployment Scripts ===",
+    "deploy": "chmod +x deploy.sh && ./deploy.sh",
+    "deploy-staging": "chmod +x deploy.sh && ./deploy.sh staging",
+    "deploy-production": "chmod +x deploy.sh && ./deploy.sh production",
+    "deploy-test": "chmod +x deploy.sh && ./deploy.sh test",
+    
+    "_comment_utilities": "=== Utility Scripts ===",
+    "postinstall": "electron-builder install-app-deps",
+    "preelectron": "npm run build",
+    "predist": "npm run build",
+    "clean": "rimraf build dist node_modules/.cache",
+    "clean-all": "rimraf build dist node_modules",
+    "reinstall": "npm run clean-all && npm install",
+    "analyze": "npm run build && npx bundle-analyzer build/static/js/*.js",
+    "lighthouse": "lhci autorun",
+    "security-audit": "npm audit && snyk test"
+  },
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.68",
+    "@types/react": "^18.2.42",
+    "@types/react-dom": "^18.2.17",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-helmet-async": "^2.0.4",
+    "react-router-dom": "^6.20.1",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5",
+    "web-vitals": "^3.5.0",
+    "workbox-background-sync": "^7.0.0",
+    "workbox-broadcast-update": "^7.0.0",
+    "workbox-cacheable-response": "^7.0.0",
+    "workbox-core": "^7.0.0",
+    "workbox-expiration": "^7.0.0",
+    "workbox-google-analytics": "^7.0.0",
+    "workbox-navigation-preload": "^7.0.0",
+    "workbox-precaching": "^7.0.0",
+    "workbox-range-requests": "^7.0.0",
+    "workbox-routing": "^7.0.0",
+    "workbox-strategies": "^7.0.0",
+    "workbox-streams": "^7.0.0"
+  },
+  "devDependencies": {
+    "_comment": "=== Electron Dependencies ===",
+    "electron": "^27.0.4",
+    "electron-builder": "^24.6.4",
+    "electron-context-menu": "^3.6.1",
+    "electron-is-dev": "^2.0.0",
+    "electron-reload": "^2.0.0-alpha.1",
+    "electron-updater": "^6.1.4",
+    "electron-window-state": "^5.0.3",
+    
+    "_comment2": "=== Development Tools ===",
+    "@craco/craco": "^7.1.0",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0",
+    "serve": "^14.2.1",
+    "rimraf": "^5.0.5",
+    
+    "_comment3": "=== Testing & Quality ===",
+    "@lhci/cli": "^0.12.0",
+    "bundlesize": "^0.18.2",
+    "eslint": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "prettier": "^3.1.0",
+    
+    "_comment4": "=== Build Tools ===",
+    "webpack-bundle-analyzer": "^4.9.1",
+    "source-map-explorer": "^2.5.3"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "build": {
+    "appId": "com.voiceinputassistant.app",
+    "productName": "Voice Input Assistant",
+    "directories": {
+      "buildResources": "electron/assets",
+      "output": "dist/installers"
+    },
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "package.json",
+      "!node_modules/**/*",
+      "!src/**/*",
+      "!public/**/*",
+      "!**/*.ts",
+      "!**/*.tsx",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "electron/assets",
+        "to": "assets",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "msi", 
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "electron/assets/icon.ico",
+      "publisherName": "Voice Input Assistant Inc.",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Voice Input Assistant",
+      "menuCategory": "Productivity",
+      "runAfterFinish": true
+    },
+    "msi": {
+      "oneClick": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "menuCategory": "Productivity"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "electron/assets/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "electron/assets/icon.png",
+      "category": "Office"
+    },
+    "fileAssociations": [
+      {
+        "ext": "via",
+        "name": "Voice Input Assistant Project",
+        "description": "Voice Input Assistant project file",
+        "role": "Editor"
+      }
+    ],
+    "protocols": [
+      {
+        "name": "Voice Input Assistant",
+        "schemes": ["voice-assistant"]
+      }
+    ]
+  },
+  "bundlesize": [
+    {
+      "path": "build/static/js/*.js",
+      "maxSize": "500kb"
+    },
+    {
+      "path": "build/static/css/*.css", 
+      "maxSize": "50kb"
+    }
+  ],
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  }
+}

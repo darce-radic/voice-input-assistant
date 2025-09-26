@@ -1,0 +1,136 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env.local",
+        ".env.production.local",
+        ".env"
+      ],
+      "outputs": [
+        "dist/**",
+        "build/**",
+        ".next/**",
+        "!.next/cache/**",
+        "bin/**",
+        "obj/**"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env.local",
+        ".env"
+      ]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.test.js",
+        "**/*.test.jsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.spec.js",
+        "**/*.spec.jsx",
+        "**/*.cs",
+        "jest.config.js",
+        "jest.config.ts"
+      ],
+      "outputs": [
+        "coverage/**",
+        "TestResults/**"
+      ]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".eslintrc.js",
+        ".eslintrc.json",
+        "eslint.config.js",
+        "tsconfig.json",
+        "**/*.editorconfig"
+      ],
+      "outputs": []
+    },
+    "lint:fix": {
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".eslintrc.js",
+        ".eslintrc.json", 
+        "eslint.config.js",
+        "tsconfig.json"
+      ],
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "tsconfig.json",
+        "tsconfig.*.json"
+      ],
+      "outputs": [
+        "tsconfig.tsbuildinfo"
+      ]
+    },
+    "format": {
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".prettierrc",
+        ".prettierrc.json",
+        ".prettierrc.js",
+        "prettier.config.js"
+      ],
+      "outputs": []
+    },
+    "format:check": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".prettierrc",
+        ".prettierrc.json", 
+        ".prettierrc.js",
+        "prettier.config.js"
+      ],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false,
+      "outputs": []
+    }
+  },
+  "globalDependencies": [
+    ".gitignore",
+    "package.json",
+    "turbo.json"
+  ],
+  "globalPassThroughEnv": [
+    "NODE_ENV",
+    "CI",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_URL",
+    "NEXT_PUBLIC_*",
+    "AZURE_*",
+    "OPENAI_*",
+    "GOOGLE_*",
+    "STRIPE_*",
+    "SUPABASE_*",
+    "DATABASE_URL",
+    "NEXTAUTH_*"
+  ]
+}
